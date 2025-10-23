@@ -1,0 +1,9 @@
+syntax = "proto3";
+package temperature;
+
+message SensorReading {
+  string sensor_id = 1;
+  double temperature = 2;
+  int64 timestamp = 3;
+  string location = 4;
+}
