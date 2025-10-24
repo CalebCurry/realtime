@@ -1,4 +1,4 @@
-use axum::{Json, Router, routing::get};
+use axum::{body::Bytes, http::StatusCode, routing::{get, post}, Json, Router};
 use std::net::SocketAddr;
 
 pub mod proto {
@@ -9,7 +9,7 @@ use proto::temperature::SensorReading;
 #[tokio::main]
 async fn main() {
     // Build the router
-    let app = Router::new().route("/example", get(example_handler));
+    let app = Router::new().route("/example", get(example_handler)).route("/api/sensor", post(handle_sensor));
 
     // Run the server
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -29,4 +29,18 @@ async fn example_handler() -> Json<SensorReading> {
     };
 
     Json(example)
+}
+
+async fn handle_sensor(body: Bytes) -> StatusCode {
+    match prost::Message::decode(body) {
+        Ok(reading) => {
+            let SensorReading {location, sensor_id, temperature, timestamp} = reading;
+            println!("Received SensorReading {} {} {} {}", location, sensor_id, temperature, timestamp);
+            StatusCode::OK
+        }
+        Err(e) => {
+            eprintln!("Error decoding proto {}", e);
+            StatusCode::BAD_REQUEST
+        }
+    }
 }
