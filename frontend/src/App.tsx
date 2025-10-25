@@ -1,35 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useEffect } from 'react'
+
 import './App.css'
+import initWS from './ws'
+import type { SensorReading } from './proto/temperature';
+import TempChart from './components/TempChart';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [readings, setReadings] = useState<SensorReading[]>([]);
+  useEffect(() => {
+    const ws = initWS();
+    ws.onmessage = (event) => {
+      const reading: SensorReading = JSON.parse(event.data);
+      setReadings((prev) => [...prev.slice(-49), reading]);
+    };
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    return () => {
+      if (ws.readyState === 1) {
+        ws.close();
+      } else {
+        ws.addEventListener('open', () => {
+          ws.close();
+        });
+      }
+    }
+  }, []);
+
+  if(readings.length < 1) {
+    return <> Loading data...</>
+  } 
+    return <div>
+      <div>{readings[readings.length - 1].temperature}°F</div>
+      <div>{new Date(readings[readings.length - 1].timestamp * 1000).toLocaleTimeString()}</div>
+      <TempChart readings={readings} />
+    </div>
 }
 
 export default App

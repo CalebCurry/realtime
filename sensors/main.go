@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -16,7 +17,7 @@ func main() {
 		go func() {
 			data, err := proto.Marshal(&temperature.SensorReading{
 				SensorId:    "abc123",
-				Temperature: 72.4,
+				Temperature: float64(72 + rand.Intn(5)),
 				Timestamp:   time.Now().Unix(),
 				Location:    "Living Room",
 			})
